@@ -15,7 +15,7 @@ The project is devided is 3 main folders:
 
 This application require python > 3.7 to run as it should.
 
-Setup your local clickhouse database
+### Setup your local clickhouse database
 >sudo apt-get install apt-transport-https ca-certificates dirmngr
 >sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E0C56BD4
 
@@ -27,6 +27,43 @@ Setup your local clickhouse database
 
 >sudo service clickhouse-server start
 ***
+
+### Setup kafka
+
+-   You need to have a kafka broker running in localhost:9090
+-   And a topic called im_challenge.
+    > kafka-topics.sh --bootstrap-server localhost:9090 --create --topic im_challenge --partitions 1 --replication-factor 1
+
+It's necessary to create the destination tables and the materialized view to consume from kafka queue:
+
+Create database:
+
+> CREATE DATABASE IF NOT EXISTS im_challenge;
+
+Create table that will consume from kafka queue:
+
+> CREATE TABLE IF NOT EXISTS im_challenge.api_captcha_data (
+    time String,
+    type String,
+    correlation_id String,
+    site_id String
+  ) ENGINE = Kafka('localhost:9090', 'im_challenge', 'im_ch_01', 'JSONEachRow');
+
+> Create tbale that will recieve all the data from the above table:
+
+> CREATE TABLE IF NOT EXISTS im_challenge.api_captcha_data_2 (
+    time String,
+    type String,
+    correlation_id String,
+    site_id String
+  ) ENGINE = ReplacingMergeTree()
+  ORDER BY (time, type, correlation_id, site_id);
+
+And last create the materialized view:
+
+> CREATE MATERIALIZED VIEW im_challenge.api_captcha_data_vw TO api_captcha_data_2
+    AS SELECT * FROM im_challenge.api_captcha_data;
+
 ### Running local
  
 - Add the clickhouse password defined in the previous step in the *main.py* file line 16.
@@ -67,9 +104,9 @@ Setup your local clickhouse database
 ## Api's
 
 It was created three main routes in the servery.y file:
-- **"/"** - Home screen
-- **"/api/event/<event>"** - Route that recieves the parameteter, perform some validations(check the validation topic) and if the payload is in the correct format, inserts into clickhouse database.
-- **"/api/report" and "api/report/filter"** - Responsible for perfoming the analytics query inside clickhouse and return the json payload to the front end. The filter parameter can be used to ***filter*** the analytics query. Example: */api/report/site_id='12345'*. If the filter is any different from this taxonomy or the column does not exist in clickhouse, will return an error message. **To use this ouput first it's necessary to add events, or it will display a missing database issue**.
+- **"/"** - Home screen.
+- **"/api/event/<event>"** - Route that recieves the parameteter, perform some validations(check the validation topic) and if the payload is in the correct format, sends to kafka queue.
+- **"/api/report" and "api/report/filter"** - Responsible for perfoming the analytics query inside clickhouse and return the json payload to the front end. The filter parameter can be used to ***filter*** the analytics query. Example: */api/report/site_id='12345'*. If the filter is any different from this taxonomy or the column does not exist in clickhouse, will return an error message.
 ***
 ## Validations
 
