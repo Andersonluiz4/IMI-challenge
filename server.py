@@ -1,6 +1,5 @@
 from flask import Flask
-from main import ClickHouseOperations
-from flask_expects_json import expects_json
+from app.main import ClickHouseOperations
 
 app = Flask(__name__)
 
