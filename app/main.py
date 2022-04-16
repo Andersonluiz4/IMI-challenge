@@ -83,6 +83,7 @@ class ClickHouseOperations(object):
 	# recieves the json and insert in the clickhouse database
 	def insert(self):
 		if connection():
+			connection().execute("CREATE DATABASE IF NOT EXISTS im_challenge")
 			errors_list = Validation(self.value).overall_validation()
 			if len(errors_list) == 0: # if no errors has been founded, proceed with the ingestion
 				data = json.loads(self.value)
@@ -90,8 +91,8 @@ class ClickHouseOperations(object):
 				correlation_id = "'{}'".format(data['correlation_id'])
 				site_id = "'{}'".format(data['site_id'])
 				dt = "'{}'".format(datetime.fromisoformat(data['time']).strftime("%Y-%m-%dT00:00:00"))
-				insert_query = "INSERT INTO test.real_test_6 (*) VALUES ({}, {}, {}, {})".format(dt, types, correlation_id, site_id)
-				connection().execute('CREATE TABLE IF NOT EXISTS test.real_test_6 ( ''time'' String, ''type'' String, ''correlation_id'' String, ''site_id'' String) ENGINE = MergeTree() ORDER BY time')
+				insert_query = "INSERT INTO im_challenge.api_captch_data (*) VALUES ({}, {}, {}, {})".format(dt, types, correlation_id, site_id)
+				connection().execute('CREATE TABLE IF NOT EXISTS im_challenge.api_captch_data ( ''time'' String, ''type'' String, ''correlation_id'' String, ''site_id'' String) ENGINE = MergeTree() ORDER BY time')
 				connection().execute(insert_query)
 				value = 'Event captured!'
 				return value
@@ -106,7 +107,7 @@ class ClickHouseOperations(object):
 				filter_str = "where {} ".format(self.value)
 			else:
 				filter_str = ''
-			query_str = "with solved as ( select distinct time, site_id, count(*) as solved from test.real_test_6 where type = 'solved' group by time, site_id ), unsolved as ( select distinct time, site_id, count(*) as serve from test.real_test_6 where type = 'serve' group by time, site_id ), unification as ( select distinct a.time as time, a.site_id as site_id, b.solved, c.serve from test.real_test_6 a LEFT JOIN solved b on a.time = b.time and a.site_id = b.site_id LEFT JOIN unsolved c on a.time = c.time and a.site_id = c.site_id ) select distinct time, site_id, sum(b.solved) as solved, sum(c.serve) as serve from unification {} group by time, site_id".format(filter_str)
+			query_str = "with solved as ( select distinct time, site_id, count(*) as solved from im_challenge.api_captch_data where type = 'solved' group by time, site_id ), unsolved as ( select distinct time, site_id, count(*) as serve from im_challenge.api_captch_data where type = 'serve' group by time, site_id ), unification as ( select distinct a.time as time, a.site_id as site_id, b.solved, c.serve from im_challenge.api_captch_data a LEFT JOIN solved b on a.time = b.time and a.site_id = b.site_id LEFT JOIN unsolved c on a.time = c.time and a.site_id = c.site_id ) select distinct time, site_id, sum(b.solved) as solved, sum(c.serve) as serve from unification {} group by time, site_id".format(filter_str)
 			results = connection().execute(query_str)
 			if results:
 				df = pd.DataFrame(results, columns=config['final_schema'])

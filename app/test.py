@@ -9,7 +9,7 @@ class FlaskTest(unittest.TestCase):
     # check for response 200
     def test_index(self):
         tester = app.test_client(self)
-        response = tester.get("/report")
+        response = tester.get("/api/report")
         status_code = response.status_code
         self.assertEqual(status_code, 200)
     
@@ -22,7 +22,7 @@ class FlaskTest(unittest.TestCase):
         self.assertFalse(b'Query failed, check your filter taxonomy' in response.data)
     
     # check json format.
-    def test_index_data(self):
+    def test_json_format(self):
         tester = app.test_client(self)
         event = '' # add your test value here
         response = tester.get('/api/event/{}'.format(event))

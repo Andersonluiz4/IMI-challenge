@@ -13,46 +13,54 @@ The project is devided is 3 main folders:
 ***
 ## Setup
 
-1 - Setup your local clickhouse database
+Setup your local clickhouse database
+>sudo apt-get install apt-transport-https ca-certificates dirmngr
+>sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E0C56BD4
+
+>echo "deb https://repo.clickhouse.tech/deb/stable/ main/" | sudo tee \
+    /etc/apt/sources.list.d/clickhouse.list
+>sudo apt-get update
+
+>sudo apt-get install -y clickhouse-server clickhouse-client
+
+>sudo service clickhouse-server start
 ***
 ### Running local
  
-- Add the clickhouse password in the main.py file line 16.
+- Add the clickhouse password defined in the previous step in the *main.py* file line 16.
 - Go the app folder and run:
     >pip install -r requirements.txt
 - To start, run:
     > python server.py
-
-
-4 - Open https://localhost:5000
+- Open https://localhost:5000
 
 ### Running with docker
 ***
-In the project root, run:
+- In the project root, run:
 
->docker build -f docker/Dockerfile -t im-challenge:latest .
+    >docker build -f docker/Dockerfile -t im-challenge:latest .
 
-Check if the image has been created:
+- Check if the image has been created:
 
->docker image ls
+    >docker image ls
 
-To start, run:
+- To start, run:
 
-> docker run -p 5001:5000 im-challenge
+    > docker run -p 5001:5000 im-challenge
 
-Open https://localhost:5001
+- Open https://localhost:5001
 
 ### Running in kubernetes:
 
-After the image is created, run:
+- After the image is created, run:
 
-> kubectl apply -f kubernetes/deployment.yaml
+    > kubectl apply -f kubernetes/deployment.yaml
 
-Check if the service was created as it should:
+- Check if the service was created as it should:
 
-> kubectl get pods
+    > kubectl get pods
 
-Open https://localhost:6000
+- Open https://localhost:6000
 
 ## Api's
 
@@ -82,6 +90,10 @@ The mandatory api fields is:
 - **site_id** - id of site captcha is installed on (uuid) - grouping key
 
 **If one of this fields are missing, it will return an error message when addng a new event.**
-
+***
 ### Unit tests
 
+In the test.py file there are three unit tests:
+- **test_index** - Will check if the *"/api/report"* response is 200.
+- **test_report_filter** - Will check the filter parameter in the *"/report/filter"* route. Change the filter variable inside the function to test for a specific value.
+- **test_json_format** - Will check the event parameter in the *"/api/event/"* route to check the json format. Change the event variable inside the function to test for a specific value.
