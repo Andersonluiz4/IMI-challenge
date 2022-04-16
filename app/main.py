@@ -5,8 +5,6 @@ import pandas as pd
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 
-producer = KafkaProducer(bootstrap_servers=['localhost:9090'])
-
 def connection(): # create clickhouse connection
     connect = Client(host='localhost', password='your clickhouse password')
     try:
@@ -115,6 +113,8 @@ class KafkaProducer(object):
         self.value = value
 
     def produce_to_kafka(self): 
+        producer = KafkaProducer(bootstrap_servers=['localhost:9090'])
+
         future = producer.send('im_challenge', bytes(self.value, encoding="ascii"))
         try:
             record_metadata = future.get(timeout=10)
