@@ -1,0 +1,5 @@
+{
+    "mandatory_fields" : ["time", "type", "correlation_id", "site_id"],
+    "final_schema" : ["time", "site_id", "solved", "serve"]
+
+}
