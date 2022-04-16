@@ -15,7 +15,12 @@ from clickhouse_migrate.migrate import migrate
 
 
 def connection(): # create clickhouse connection
-   return Client(host='localhost', password='c6n3s2')
+	connect = Client(host='localhost', password='c6n3s2')
+	try:
+		connect.execute("select now();")
+		return connect
+	except:
+		False
 
 with open('config.json', 'r') as f:
 	config = json.load(f)
@@ -81,27 +86,30 @@ class ClickHouseOperations(object):
 		
 	# recieves the json and insert in the clickhouse database
 	def insert(self):
-		errors_list = Validation(self.value).overall_validation()
-		if len(errors_list) == 0: # if no errors has been founded, proceed with the ingestion
-			data = json.loads(self.value)
-			types = "'{}'".format(data['type'])
-			correlation_id = "'{}'".format(data['correlation_id'])
-			site_id = "'{}'".format(data['site_id'])
-			dt = "'{}'".format(datetime.fromisoformat(data['time']).strftime("%Y-%m-%dT00:00:00"))
-			insert_query = "INSERT INTO test.real_test_6 (*) VALUES ({}, {}, {}, {})".format(dt, types, correlation_id, site_id)
-			connection().execute('CREATE TABLE IF NOT EXISTS test.real_test_6 ( ''time'' String, ''type'' String, ''correlation_id'' String, ''site_id'' String) ENGINE = MergeTree() ORDER BY time')
-			connection().execute(insert_query)
-			value = 'Event captured!'
-			return value
+		if connection():
+			errors_list = Validation(self.value).overall_validation()
+			if len(errors_list) == 0: # if no errors has been founded, proceed with the ingestion
+				data = json.loads(self.value)
+				types = "'{}'".format(data['type'])
+				correlation_id = "'{}'".format(data['correlation_id'])
+				site_id = "'{}'".format(data['site_id'])
+				dt = "'{}'".format(datetime.fromisoformat(data['time']).strftime("%Y-%m-%dT00:00:00"))
+				insert_query = "INSERT INTO test.real_test_6 (*) VALUES ({}, {}, {}, {})".format(dt, types, correlation_id, site_id)
+				connection().execute('CREATE TABLE IF NOT EXISTS test.real_test_6 ( ''time'' String, ''type'' String, ''correlation_id'' String, ''site_id'' String) ENGINE = MergeTree() ORDER BY time')
+				connection().execute(insert_query)
+				value = 'Event captured!'
+				return value
+			else:
+				return errors_list.pop(0)
 		else:
-			return errors_list.pop(0)
+			return 'Unable to connect to clickhouse database'
 
 	def read(self): # run the query in clickhouse database to model data
-		if self.value:
-			filter_str = "where {} ".format(self.value)
-		else:
-			filter_str = ''
-		try:
+		if connection():
+			if self.value:
+				filter_str = "where {} ".format(self.value)
+			else:
+				filter_str = ''
 			query_str = "with solved as ( select distinct time, site_id, count(*) as solved from test.real_test_6 where type = 'solved' group by time, site_id ), unsolved as ( select distinct time, site_id, count(*) as serve from test.real_test_6 where type = 'serve' group by time, site_id ), unification as ( select distinct a.time as time, a.site_id as site_id, b.solved, c.serve from test.real_test_6 a LEFT JOIN solved b on a.time = b.time and a.site_id = b.site_id LEFT JOIN unsolved c on a.time = c.time and a.site_id = c.site_id ) select distinct time, site_id, sum(b.solved) as solved, sum(c.serve) as serve from unification {} group by time, site_id".format(filter_str)
 			results = connection().execute(query_str)
 			if results:
@@ -110,6 +118,7 @@ class ClickHouseOperations(object):
 				json_data = json.dumps(dictt)
 			else:
 				json_data = 'No records matched the filtering.'
-		except:
-			json_data = 'Query failed, check your filter taxonomy'
-		return json_data
+
+			return json_data
+		else:
+			return 'Unable to connect to clickhouse database'
