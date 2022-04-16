@@ -13,11 +13,14 @@ import pandas as pd
 from clickhouse_migrate.migrate import migrate
 
 
+
 def connection(): # create clickhouse connection
    return Client(host='localhost', password='c6n3s2')
 
 with open('config.json', 'r') as f:
 	config = json.load(f)
+
+
 
 class Validation(object):
 
