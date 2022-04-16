@@ -7,7 +7,7 @@ app = Flask(__name__)
 def home():
     return 'Insert the event in the /api/event/ url'
     
-    
+
 @app.route("/api/event/<event>")
 def insert(event):
     return ClickHouseOperations(event).insert()

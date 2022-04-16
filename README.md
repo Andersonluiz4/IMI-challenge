@@ -13,6 +13,8 @@ The project is devided is 3 main folders:
 ***
 ## Setup
 
+This application require python > 3.7 to run as it should.
+
 Setup your local clickhouse database
 >sudo apt-get install apt-transport-https ca-certificates dirmngr
 >sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E0C56BD4
@@ -67,7 +69,7 @@ Setup your local clickhouse database
 It was created three main routes in the servery.y file:
 - **"/"** - Home screen
 - **"/api/event/<event>"** - Route that recieves the parameteter, perform some validations(check the validation topic) and if the payload is in the correct format, inserts into clickhouse database.
-- **"/api/report" and "api/report/filter"** - Responsible for perfoming the analytics query inside clickhouse and return the json payload to the front end. The filter parameter can be used to ***filter*** the analytics query. Example: */api/report/site_id='12345'*. If the filter is any different from this taxonomy or the column does not exist in clickhouse, will return an error message.
+- **"/api/report" and "api/report/filter"** - Responsible for perfoming the analytics query inside clickhouse and return the json payload to the front end. The filter parameter can be used to ***filter*** the analytics query. Example: */api/report/site_id='12345'*. If the filter is any different from this taxonomy or the column does not exist in clickhouse, will return an error message. **To use this ouput first it's necessary to add events, or it will display a missing database issue**.
 ***
 ## Validations
 
