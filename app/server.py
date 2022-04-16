@@ -1,5 +1,5 @@
 from flask import Flask
-from app.main import ClickHouseOperations
+from main import ClickHouseOperations
 
 app = Flask(__name__)
 

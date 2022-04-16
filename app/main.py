@@ -13,8 +13,12 @@ import pandas as pd
 
 
 def connection(): # create clickhouse connection
-	return Client(host='localhost', password='c6n3s2')
-
+	connect = Client(host='localhost', password='c6n3s2')
+	try:
+		connect.execute("select now();")
+		return connect
+	except:
+		False
 
 with open('config.json', 'r') as f:
 	config = json.load(f)
@@ -80,8 +84,7 @@ class ClickHouseOperations(object):
 		
 	# recieves the json and insert in the clickhouse database
 	def insert(self):
-		client = connection()
-		if client:
+		if connection():
 			errors_list = Validation(self.value).overall_validation()
 			if len(errors_list) == 0: # if no errors has been founded, proceed with the ingestion
 				data = json.loads(self.value)
@@ -97,26 +100,23 @@ class ClickHouseOperations(object):
 			else:
 				return errors_list.pop(0)
 		else:
-			return 'Failure to connect with database'
+			return 'Unable to connect to clickhouse database'
 
 	def read(self): # run the query in clickhouse database to model data
-		client = connection()
-		if client:
+		if connection():
 			if self.value:
 				filter_str = "where {} ".format(self.value)
 			else:
 				filter_str = ''
-			try:
-				query_str = "with solved as ( select distinct time, site_id, count(*) as solved from test.real_test_6 where type = 'solved' group by time, site_id ), unsolved as ( select distinct time, site_id, count(*) as serve from test.real_test_6 where type = 'serve' group by time, site_id ), unification as ( select distinct a.time as time, a.site_id as site_id, b.solved, c.serve from test.real_test_6 a LEFT JOIN solved b on a.time = b.time and a.site_id = b.site_id LEFT JOIN unsolved c on a.time = c.time and a.site_id = c.site_id ) select distinct time, site_id, sum(b.solved) as solved, sum(c.serve) as serve from unification {} group by time, site_id".format(filter_str)
-				results = connection().execute(query_str)
-				if results:
-					df = pd.DataFrame(results, columns=config['final_schema'])
-					dictt = df.to_dict(orient='records')
-					json_data = json.dumps(dictt)
-				else:
-					json_data = 'No records matched the filtering.'
-			except:
-				json_data = 'Query failed, check your filter taxonomy'
+			query_str = "with solved as ( select distinct time, site_id, count(*) as solved from test.real_test_6 where type = 'solved' group by time, site_id ), unsolved as ( select distinct time, site_id, count(*) as serve from test.real_test_6 where type = 'serve' group by time, site_id ), unification as ( select distinct a.time as time, a.site_id as site_id, b.solved, c.serve from test.real_test_6 a LEFT JOIN solved b on a.time = b.time and a.site_id = b.site_id LEFT JOIN unsolved c on a.time = c.time and a.site_id = c.site_id ) select distinct time, site_id, sum(b.solved) as solved, sum(c.serve) as serve from unification {} group by time, site_id".format(filter_str)
+			results = connection().execute(query_str)
+			if results:
+				df = pd.DataFrame(results, columns=config['final_schema'])
+				dictt = df.to_dict(orient='records')
+				json_data = json.dumps(dictt)
+			else:
+				json_data = 'No records matched the filtering.'
+
 			return json_data
 		else:
-			return 'Failure to connect with database'
+			return 'Unable to connect to clickhouse database'
