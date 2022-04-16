@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: im-challenge
-        image: im-challenge:latest
+        image: dummy:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 5002

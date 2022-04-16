@@ -9,12 +9,12 @@ def home():
     
     
 @app.route("/api/event/<event>")
-def event(event):
+def insert(event):
     return ClickHouseOperations(event).insert()
 
-@app.route("/report")
-@app.route('/report/<filter>')
-def hello(filter=False):
+@app.route("/api/report")
+@app.route('/api/report/<filter>')
+def read(filter=False):
     data = ClickHouseOperations(filter).read()
     return data
 

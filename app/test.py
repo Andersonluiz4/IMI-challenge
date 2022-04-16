@@ -1,6 +1,7 @@
 try:
     from server import app
     import unittest
+    from clickhouse_driver import Client
 
 except Exception as e:
     print("Some modules are missins {}".format(e))
@@ -27,6 +28,14 @@ class FlaskTest(unittest.TestCase):
         tester = app.test_client(self)
         response = tester.get('/api/event/<event>')
         self.assertFalse(b'Invalid json format' in response.data)
+
+    def connection(): # create clickhouse connection
+        connect = Client(host='localhost', password='c6n3s2')
+        try:
+            connect.execute("select now();")
+            return connect
+        except:
+            False
         
 if __name__ == "__main__":
     unittest.main()
