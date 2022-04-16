@@ -20,7 +20,7 @@ def connection(): # create clickhouse connection
 	except:
 		False
 
-with open('app/config.json', 'r') as f: # when running local, remove the app/ path
+with open('config.json', 'r') as f: # when running local, remove the app/ path
 	config = json.load(f)
 
 class Validation(object):
